@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Voice Card Playback</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body style="font-family: sans-serif; text-align: center; padding: 40px;">
+  <h2>🎧 Your Voice Message</h2>
+  <audio id="player" controls></audio>
+  <p id="status"></p>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const card = params.get('card');
+    const statusEl = document.getElementById('status');
+    const audioPlayer = document.getElementById('player');
+
+    fetch('audio-map.json')
+      .then(response => response.json())
+      .then(map => {
+        if (!card || !map[card]) {
+          statusEl.textContent = '❌ No audio available for this Card ID.';
+          return;
+        }
+
+        const fileId = map[card];
+        const driveUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+
+        audioPlayer.src = driveUrl;
+        statusEl.textContent = `Now playing: ${card}`;
+      })
+      .catch(() => {
+        statusEl.textContent = 'Error loading audio mapping.';
+      });
+  </script>
+</body>
+</html>
