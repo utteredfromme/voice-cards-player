@@ -1,0 +1,48 @@
+/// GitHub: index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Card Playback</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 40px; }
+    audio { margin-top: 20px; width: 100%; max-width: 300px; }
+    #status { margin-top: 20px; font-size: 1rem; color: #333; }
+  </style>
+</head>
+<body>
+  <h2>🎧 Your Voice Message</h2>
+  <audio id="player" controls></audio>
+  <p id="status"></p>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const cardId = params.get("card");
+    const player = document.getElementById("player");
+    const status = document.getElementById("status");
+
+    if (!cardId) {
+      status.textContent = "⚠️ Missing card ID.";
+      player.style.display = 'none';
+    } else {
+      fetch("audio-map.json")
+        .then(res => res.json())
+        .then(data => {
+          const audioUrl = data[cardId];
+          if (audioUrl) {
+            player.src = audioUrl;
+            status.textContent = `Playing audio for ${cardId}`;
+          } else {
+            status.textContent = `❌ No audio found for this card ID.`;
+            player.style.display = 'none';
+          }
+        })
+        .catch(err => {
+          status.textContent = "❌ Error loading audio mapping.";
+          player.style.display = 'none';
+        });
+    }
+  </script>
+</body>
+</html>
