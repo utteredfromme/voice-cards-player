@@ -3,36 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <title>Voice Card Playback</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
 </head>
-<body style="font-family: sans-serif; text-align: center; padding: 40px;">
-  <h2>🎧 Your Voice Message</h2>
-  <audio id="player" controls></audio>
-  <p id="status"></p>
+<body>
+  <h1>Voice Message Playback</h1>
+  <div id="player"></div>
+  <p id="status">Loading...</p>
 
   <script>
+    // Get card ID from URL query param ?card=
     const params = new URLSearchParams(window.location.search);
-    const card = params.get('card');
-    const statusEl = document.getElementById('status');
-    const audioPlayer = document.getElementById('player');
+    const cardId = params.get('card');
 
-    fetch('audio-map.json')
-      .then(response => response.json())
-      .then(map => {
-        if (!card || !map[card]) {
-          statusEl.textContent = '❌ No audio available for this Card ID.';
-          return;
-        }
+    const status = document.getElementById('status');
+    const playerDiv = document.getElementById('player');
 
-        const fileId = map[card];
-        const driveUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-
-        audioPlayer.src = driveUrl;
-        statusEl.textContent = `Now playing: ${card}`;
-      })
-      .catch(() => {
-        statusEl.textContent = 'Error loading audio mapping.';
-      });
+    if (!cardId) {
+      status.textContent = 'No card ID provided.';
+    } else {
+      // Load audio-map.json dynamically
+      fetch('audio-map.json')
+        .then(res => res.json())
+        .then(map => {
+          if (map[cardId]) {
+            status.textContent = `Playing card ID: ${cardId}`;
+            const audioUrl = map[cardId];
+            const audio = document.createElement('audio');
+            audio.controls = true;
+            audio.src = audioUrl;
+            audio.autoplay = true;
+            playerDiv.appendChild(audio);
+          } else {
+            status.textContent = `No audio found for card ID: ${cardId}`;
+          }
+        })
+        .catch(err => {
+          status.textContent = 'Error loading audio map.';
+          console.error(err);
+        });
+    }
   </script>
 </body>
 </html>
+
