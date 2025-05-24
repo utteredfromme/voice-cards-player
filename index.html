@@ -1,48 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Voice Cards</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Voice Message Playback</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 3em;
+      background-color: #fdf6f0;
+      color: #333;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 1em;
+    }
+    audio {
+      margin-top: 1em;
+      width: 100%;
+      max-width: 400px;
+    }
+    .fallback {
+      font-size: 1.2em;
+      margin-top: 2em;
+      color: #888;
+    }
+  </style>
 </head>
 <body>
-  <h1>Hello from Voice Cards!</h1>
-  <p>If you're seeing this, GitHub Pages is working.</p>
-</body>
-</html>
+  <h1 id="title">🔊 Loading...</h1>
+  <div id="player"></div>
 
   <script>
-    // Get card ID from URL query param ?card=
-    const params = new URLSearchParams(window.location.search);
-    const cardId = params.get('card');
+    async function loadAudio() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const cardId = urlParams.get('card');
 
-    const status = document.getElementById('status');
-    const playerDiv = document.getElementById('player');
+      if (!cardId) {
+        document.getElementById('title').textContent = "❌ Missing Card ID";
+        document.getElementById('player').innerHTML = `<p class="fallback">No card ID provided in the URL.</p>`;
+        return;
+      }
 
-    if (!cardId) {
-      status.textContent = 'No card ID provided.';
-    } else {
-      // Load audio-map.json dynamically
-      fetch('audio-map.json')
-        .then(res => res.json())
-        .then(map => {
-          if (map[cardId]) {
-            status.textContent = `Playing card ID: ${cardId}`;
-            const audioUrl = map[cardId];
-            const audio = document.createElement('audio');
-            audio.controls = true;
-            audio.src = audioUrl;
-            audio.autoplay = true;
-            playerDiv.appendChild(audio);
-          } else {
-            status.textContent = `No audio found for card ID: ${cardId}`;
-          }
-        })
-        .catch(err => {
-          status.textContent = 'Error loading audio map.';
-          console.error(err);
-        });
+      try {
+        const response = await fetch('audio-map.json');
+        if (!response.ok) throw new Error('Unable to load audio map.');
+        const map = await response.json();
+
+        if (map[cardId]) {
+          document.getElementById('title').textContent = `💌 Voice Message for ${cardId}`;
+          const audioUrl = map[cardId];
+          document.getElementById('player').innerHTML = `
+            <audio controls autoplay>
+              <source src="${audioUrl}" type="audio/mpeg">
+              Your browser does not support the audio element.
+            </audio>
+          `;
+        } else {
+          document.getElementById('title').textContent = `⏳ Voice Message Not Ready Yet`;
+          document.getElementById('player').innerHTML = `<p class="fallback">The message for card ID <strong>${cardId}</strong> hasn't been uploaded yet.</p>`;
+        }
+      } catch (error) {
+        document.getElementById('title').textContent = "⚠️ Error Loading Audio Map";
+        document.getElementById('player').innerHTML = `<p class="fallback">Something went wrong. Please try again later.</p>`;
+        console.error(error);
+      }
     }
+
+    loadAudio();
   </script>
 </body>
 </html>
-
-
