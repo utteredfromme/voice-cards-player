@@ -2,73 +2,74 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Voice Message Playback</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voice Card Playback</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      text-align: center;
-      padding: 3em;
-      background-color: #fdf6f0;
-      color: #333;
-    }
-    h1 {
-      font-size: 2em;
-      margin-bottom: 1em;
-    }
-    audio {
-      margin-top: 1em;
-      width: 100%;
-      max-width: 400px;
-    }
-    .fallback {
-      font-size: 1.2em;
-      margin-top: 2em;
-      color: #888;
-    }
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 2em auto; padding: 0 1em; }
+    h1 { text-align: center; }
+    ul { list-style-type: none; padding: 0; }
+    li { margin-bottom: 1em; }
+    button { padding: 0.5em 1em; font-size: 1em; cursor: pointer; }
+    audio { display: block; margin-top: 0.5em; width: 100%; }
   </style>
 </head>
 <body>
-  <h1 id="title">🔊 Loading...</h1>
-  <div id="player"></div>
 
-  <script>
-    async function loadAudio() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const cardId = urlParams.get('card');
+<h1>Voice Card Playback</h1>
 
-      if (!cardId) {
-        document.getElementById('title').textContent = "❌ Missing Card ID";
-        document.getElementById('player').innerHTML = `<p class="fallback">No card ID provided in the URL.</p>`;
+<div id="loading">Loading audio list...</div>
+<ul id="audioList"></ul>
+
+<script>
+  // Your Google Drive Folder ID where audio-map.json lives
+  const DRIVE_FOLDER_ID = '1eTnUnGBQsq8bfEuzNaylpLzt2STqVanQ';
+
+  // URL to your audio-map.json file on Google Drive
+  // Format: https://drive.google.com/uc?export=download&id=FILE_ID
+  const AUDIO_MAP_JSON_ID = 'PUT_YOUR_AUDIO_MAP_JSON_FILE_ID_HERE';
+
+  const audioListElem = document.getElementById('audioList');
+  const loadingElem = document.getElementById('loading');
+
+  // Helper to create Google Drive direct download URL for audio files
+  function getAudioFileUrl(fileId) {
+    return `https://drive.google.com/uc?export=download&id=${fileId}`;
+  }
+
+  // Fetch audio-map.json from Google Drive
+  fetch(getAudioFileUrl(AUDIO_MAP_JSON_ID))
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to fetch audio map JSON');
+      return response.json();
+    })
+    .then(audioMap => {
+      loadingElem.style.display = 'none';
+
+      if (Object.keys(audioMap).length === 0) {
+        audioListElem.innerHTML = '<li>No audio files found.</li>';
         return;
       }
 
-      try {
-        const response = await fetch('audio-map.json');
-        if (!response.ok) throw new Error('Unable to load audio map.');
-        const map = await response.json();
+      for (const cardId in audioMap) {
+        const fileId = audioMap[cardId];
+        const listItem = document.createElement('li');
 
-        if (map[cardId]) {
-          document.getElementById('title').textContent = `💌 Voice Message for ${cardId}`;
-          const audioUrl = map[cardId];
-          document.getElementById('player').innerHTML = `
-            <audio controls autoplay>
-              <source src="${audioUrl}" type="audio/mpeg">
-              Your browser does not support the audio element.
-            </audio>
-          `;
-        } else {
-          document.getElementById('title').textContent = `⏳ Voice Message Not Ready Yet`;
-          document.getElementById('player').innerHTML = `<p class="fallback">The message for card ID <strong>${cardId}</strong> hasn't been uploaded yet.</p>`;
-        }
-      } catch (error) {
-        document.getElementById('title').textContent = "⚠️ Error Loading Audio Map";
-        document.getElementById('player').innerHTML = `<p class="fallback">Something went wrong. Please try again later.</p>`;
-        console.error(error);
+        const label = document.createElement('strong');
+        label.textContent = `Card ID: ${cardId}`;
+        listItem.appendChild(label);
+
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = getAudioFileUrl(fileId);
+
+        listItem.appendChild(audio);
+        audioListElem.appendChild(listItem);
       }
-    }
+    })
+    .catch(err => {
+      loadingElem.textContent = `Error loading audio list: ${err.message}`;
+    });
+</script>
 
-    loadAudio();
-  </script>
 </body>
 </html>
