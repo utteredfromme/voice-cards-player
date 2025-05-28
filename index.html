@@ -1,75 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Voice Card Playback</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 2em auto; padding: 0 1em; }
-    h1 { text-align: center; }
-    ul { list-style-type: none; padding: 0; }
-    li { margin-bottom: 1em; }
-    button { padding: 0.5em 1em; font-size: 1em; cursor: pointer; }
-    audio { display: block; margin-top: 0.5em; width: 100%; }
-  </style>
-</head>
-<body>
-
-<h1>Voice Card Playback</h1>
-
-<div id="loading">Loading audio list...</div>
-<ul id="audioList"></ul>
-
 <script>
-  // Your Google Drive Folder ID where audio-map.json lives
-  const DRIVE_FOLDER_ID = '1eTnUnGBQsq8bfEuzNaylpLzt2STqVanQ';
+  async function loadAudio() {
+    const params = new URLSearchParams(location.search);
+    const cardId = params.get("card");
 
-  // URL to your audio-map.json file on Google Drive
-  // Format: https://drive.google.com/uc?export=download&id=FILE_ID
-  const AUDIO_MAP_JSON_ID = 'PUT_YOUR_AUDIO_MAP_JSON_FILE_ID_HERE';
+    if (!cardId) {
+      document.getElementById("status").innerText = "Missing card ID in URL.";
+      return;
+    }
 
-  const audioListElem = document.getElementById('audioList');
-  const loadingElem = document.getElementById('loading');
+    try {
+      const response = await fetch("audio-map.json");
+      if (!response.ok) throw new Error("Load failed");
 
-  // Helper to create Google Drive direct download URL for audio files
-  function getAudioFileUrl(fileId) {
-    return `https://drive.google.com/uc?export=download&id=${fileId}`;
-  }
+      const map = await response.json();
 
-  // Fetch audio-map.json from Google Drive
-  fetch(getAudioFileUrl(AUDIO_MAP_JSON_ID))
-    .then(response => {
-      if (!response.ok) throw new Error('Failed to fetch audio map JSON');
-      return response.json();
-    })
-    .then(audioMap => {
-      loadingElem.style.display = 'none';
-
-      if (Object.keys(audioMap).length === 0) {
-        audioListElem.innerHTML = '<li>No audio files found.</li>';
+      const fileId = map[cardId];
+      if (!fileId) {
+        document.getElementById("status").innerText = "Card ID not found.";
         return;
       }
 
-      for (const cardId in audioMap) {
-        const fileId = audioMap[cardId];
-        const listItem = document.createElement('li');
+      const audioUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      audio.src = audioUrl;
+      document.getElementById("player").appendChild(audio);
 
-        const label = document.createElement('strong');
-        label.textContent = `Card ID: ${cardId}`;
-        listItem.appendChild(label);
+      document.getElementById("status").style.display = "none";
+    } catch (e) {
+      console.error(e);
+      document.getElementById("status").innerText = `Error loading list: ${e.message}`;
+    }
+  }
 
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = getAudioFileUrl(fileId);
-
-        listItem.appendChild(audio);
-        audioListElem.appendChild(listItem);
-      }
-    })
-    .catch(err => {
-      loadingElem.textContent = `Error loading audio list: ${err.message}`;
-    });
+  window.onload = loadAudio;
 </script>
-
-</body>
-</html>
