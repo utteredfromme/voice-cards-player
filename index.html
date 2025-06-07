@@ -34,7 +34,7 @@
   const statusEl = document.getElementById('status');
   const playerEl = document.getElementById('player');
 
-  // Get card ID from URL parameter
+  // Get card ID from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const cardId = urlParams.get('card');
 
@@ -43,7 +43,7 @@
     return;
   }
 
-  // URL to your audio-map.json on GitHub Pages
+  // URL to your audio-map.json on GitHub Pages (adjust path if needed)
   const audioMapUrl = './audio-map.json';
 
   try {
@@ -63,8 +63,9 @@
 
     const iframe = document.createElement('iframe');
     iframe.src = previewUrl;
-    iframe.allow = 'autoplay';
+    iframe.allow = 'autoplay';  // Allow autoplay inside iframe
 
+    // Clear status and append iframe player
     statusEl.textContent = '';
     playerEl.appendChild(iframe);
 
@@ -77,3 +78,4 @@
 
 </body>
 </html>
+
