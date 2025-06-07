@@ -1,70 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Voice Cards Player</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 1rem; }
-    #status { margin-bottom: 1rem; color: #444; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Voice Card Playback</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 2rem; max-width: 600px; margin: auto; }
+  #status { margin-bottom: 1rem; color: #555; }
+  audio { width: 100%; outline: none; }
+</style>
 </head>
 <body>
-  <h1>Voice Cards Player</h1>
-  <div id="status">Loading audio...</div>
-  <div id="player"></div>
 
-  <script>
-    async function main() {
-      const statusEl = document.getElementById('status');
-      const playerEl = document.getElementById('player');
+<h1>Voice Card Playback</h1>
+<div id="status">Loading audio...</div>
+<div id="player"></div>
 
-      if (!statusEl || !playerEl) {
-        console.error('Required elements missing from the page.');
-        return;
-      }
+<script>
+(async () => {
+  const statusEl = document.getElementById('status');
+  const playerEl = document.getElementById('player');
 
-      try {
-        // Get card ID from URL ?card=ABC123
-        const params = new URLSearchParams(window.location.search);
-        const cardId = params.get('card');
-        if (!cardId) {
-          statusEl.innerText = 'No card ID specified in URL.';
-          return;
-        }
+  // Get card ID from URL parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const cardId = urlParams.get('card');
 
-        // Load audio-map.json (make sure your repo has this file at root)
-        const response = await fetch('audio-map.json');
-        if (!response.ok) throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+  if (!cardId) {
+    statusEl.textContent = 'No card ID provided in URL.';
+    return;
+  }
 
-        const audioMap = await response.json();
+  // URL to your audio-map.json on GitHub Pages (change if needed)
+  const audioMapUrl = './audio-map.json';
 
-        if (!audioMap[cardId]) {
-          statusEl.innerText = `Card ID "${cardId}" not found in audio map.`;
-          return;
-        }
+  try {
+    // Fetch audio map JSON
+    const response = await fetch(audioMapUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to load audio list (status ${response.status})`);
+    }
+    const audioMap = await response.json();
 
-        // Construct Google Drive direct download link
-        const fileId = audioMap[cardId];
-        const audioUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-
-        // Create audio player element
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = audioUrl;
-
-        // Clear status and append player
-        statusEl.innerText = '';
-        playerEl.appendChild(audio);
-
-      } catch (e) {
-        statusEl.innerText = `Error loading audio list: ${e.message}`;
-        console.error(e);
-      }
+    if (!(cardId in audioMap)) {
+      statusEl.textContent = `Audio for card ID "${cardId}" is not uploaded yet.`;
+      return;
     }
 
-    // Run after DOM content fully loaded
-    document.addEventListener('DOMContentLoaded', main);
-  </script>
+    // Build the Google Drive file URL
+    const fileId = audioMap[cardId];
+    // Use Google Drive preview direct link for audio streaming
+    // Format: https://docs.google.com/uc?export=download&id=FILE_ID
+    const audioUrl = `https://docs.google.com/uc?export=download&id=${fileId}`;
+
+    // Create audio element
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.src = audioUrl;
+
+    // Handle error loading audio file
+    audio.onerror = () => {
+      statusEl.textContent = 'Audio file could not be loaded. Please check back later.';
+    };
+
+    // Clear status and show player when ready
+    audio.oncanplay = () => {
+      statusEl.textContent = '';
+      playerEl.appendChild(audio);
+    };
+
+  } catch (e) {
+    statusEl.textContent = `Audio list not available yet. Please check back later.`;
+    console.error('Error loading audio list:', e);
+  }
+})();
+</script>
+
 </body>
 </html>
