@@ -1,81 +1,122 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Voice Card Playback</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    padding: 2rem;
-    max-width: 600px;
-    margin: auto;
-    text-align: center;
-  }
-  #status {
-    margin-bottom: 1rem;
-    color: #555;
-  }
-  iframe {
-    width: 100%;
-    height: 100px;
-    border: none;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voice Card Playback</title>
+  <style>
+    /* Base Reset & Font */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9fafb;
+      color: #222;
+      padding: 2rem 1rem;
+      max-width: 600px;
+      margin: 2rem auto;
+      text-align: center;
+      line-height: 1.5;
+    }
+    h1 {
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #333;
+      user-select: none;
+    }
+    #status {
+      margin-bottom: 1.5rem;
+      font-size: 1.1rem;
+      color: #666;
+      min-height: 1.3em; /* prevent jump on text changes */
+      transition: color 0.3s ease;
+    }
+    #status.error {
+      color: #c00;
+      font-weight: 600;
+    }
+    iframe {
+      width: 100%;
+      height: 110px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgb(0 0 0 / 0.1);
+      transition: border-color 0.3s ease;
+    }
+    iframe:focus {
+      outline: none;
+      border-color: #0078d7;
+      box-shadow: 0 0 8px #0078d7aa;
+    }
+    /* Small footer */
+    footer {
+      margin-top: 3rem;
+      font-size: 0.85rem;
+      color: #999;
+      user-select: none;
+    }
+  </style>
 </head>
 <body>
 
-<h1>Voice Card Playback</h1>
-<div id="status">Loading audio...</div>
-<div id="player"></div>
+  <h1>Voice Card Playback</h1>
+  <div id="status">Loading audio...</div>
+  <div id="player"></div>
 
-<script>
-(async () => {
-  const statusEl = document.getElementById('status');
-  const playerEl = document.getElementById('player');
+  <script>
+  (async () => {
+    const statusEl = document.getElementById('status');
+    const playerEl = document.getElementById('player');
 
-  // Get card ID from URL parameters
-  const urlParams = new URLSearchParams(window.location.search);
-  const cardId = urlParams.get('card');
+    // Get card ID from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const cardId = urlParams.get('card');
 
-  if (!cardId) {
-    statusEl.textContent = 'No card ID provided in URL.';
-    return;
-  }
-
-  // URL to your audio-map.json on GitHub Pages (adjust path if needed)
-  const audioMapUrl = './audio-map.json';
-
-  try {
-    const response = await fetch(audioMapUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to load audio map (status ${response.status})`);
-    }
-    const audioMap = await response.json();
-
-    if (!(cardId in audioMap)) {
-      statusEl.textContent = `Audio for card ID "${cardId}" is not uploaded yet.`;
+    if (!cardId) {
+      statusEl.textContent = 'No card ID provided in URL.';
+      statusEl.classList.add('error');
       return;
     }
 
-    const fileId = audioMap[cardId];
-    const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+    // URL to your audio-map.json on GitHub Pages (adjust path if needed)
+    const audioMapUrl = './audio-map.json';
 
-    const iframe = document.createElement('iframe');
-    iframe.src = previewUrl;
-    iframe.allow = 'autoplay';  // Allow autoplay inside iframe
+    try {
+      const response = await fetch(audioMapUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to load audio map (status ${response.status})`);
+      }
+      const audioMap = await response.json();
 
-    // Clear status and append iframe player
-    statusEl.textContent = '';
-    playerEl.appendChild(iframe);
+      if (!(cardId in audioMap)) {
+        statusEl.textContent = `Audio for card ID "${cardId}" is not uploaded yet.`;
+        statusEl.classList.add('error');
+        return;
+      }
 
-  } catch (e) {
-    console.error('Error loading audio map:', e);
-    statusEl.textContent = 'Audio list not available yet. Please check back later.';
-  }
-})();
-</script>
+      const fileId = audioMap[cardId];
+      const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+
+      const iframe = document.createElement('iframe');
+      iframe.src = previewUrl;
+      iframe.allow = 'autoplay';  // Allow autoplay inside iframe
+      iframe.title = `Audio player for card ID ${cardId}`;
+
+      // Clear status and append iframe player
+      statusEl.textContent = '';
+      statusEl.classList.remove('error');
+      playerEl.appendChild(iframe);
+
+    } catch (e) {
+      console.error('Error loading audio map:', e);
+      statusEl.textContent = 'Audio list not available yet. Please check back later.';
+      statusEl.classList.add('error');
+    }
+  })();
+  </script>
+
+  <footer>Powered by Your Voice Card System</footer>
 
 </body>
 </html>
-
