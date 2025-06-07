@@ -1,37 +1,89 @@
-<script>
-  async function loadAudio() {
-    const params = new URLSearchParams(location.search);
-    const cardId = params.get("card");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voice Card Player</title>
+</head>
+<body>
+  <h1>Voice Card Player</h1>
 
-    if (!cardId) {
-      document.getElementById("status").innerText = "Missing card ID in URL.";
-      return;
+  <!-- Status messages will show here -->
+  <div id="status" style="margin-bottom: 1em; color: red;"></div>
+
+  <!-- Audio player will be inserted here -->
+  <div id="player"></div>
+
+  <script>
+    // Helper: get URL parameter 'card'
+    function getCardId() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('card');
     }
 
-    try {
-      const response = await fetch("audio-map.json");
-      if (!response.ok) throw new Error("Load failed");
+    async function loadAudioMap() {
+      try {
+        const response = await fetch('audio-map.json');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+      } catch (e) {
+        document.getElementById('status').innerText = `Error loading audio list: ${e.message}`;
+        throw e;
+      }
+    }
 
-      const map = await response.json();
+    function createAudioElement(src) {
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.src = src;
+      audio.autoplay = true;
+      return audio;
+    }
 
-      const fileId = map[cardId];
-      if (!fileId) {
-        document.getElementById("status").innerText = "Card ID not found.";
+    async function main() {
+      const status = document.getElementById('status');
+      const player = document.getElementById('player');
+
+      if (!status || !player) {
+        console.error('Required HTML elements are missing');
         return;
       }
 
+      const cardId = getCardId();
+      if (!cardId) {
+        status.innerText = 'No card ID provided in URL.';
+        return;
+      }
+
+      status.innerText = 'Loading audio map...';
+      let audioMap;
+      try {
+        audioMap = await loadAudioMap();
+      } catch {
+        return;
+      }
+
+      if (!(cardId in audioMap)) {
+        status.innerText = `Card ID "${cardId}" not ready yet.`;
+        return;
+      }
+
+      const fileId = audioMap[cardId];
+      // Google Drive public download URL pattern
       const audioUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-      const audio = document.createElement("audio");
-      audio.controls = true;
-      audio.src = audioUrl;
-      document.getElementById("player").appendChild(audio);
 
-      document.getElementById("status").style.display = "none";
-    } catch (e) {
-      console.error(e);
-      document.getElementById("status").innerText = `Error loading list: ${e.message}`;
+      status.innerText = `Playing audio for Card ID: ${cardId}`;
+
+      const audioElem = createAudioElement(audioUrl);
+
+      player.appendChild(audioElem);
+
+      audioElem.onerror = () => {
+        status.innerText = 'Error loading audio file. Make sure the file is publicly shared.';
+      };
     }
-  }
 
-  window.onload = loadAudio;
-</script>
+    main();
+  </script>
+</body>
+</html>
